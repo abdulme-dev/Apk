@@ -59,17 +59,26 @@ jobs:
         # Accept licenses
         yes | "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --sdk_root="$ANDROID_SDK_ROOT" --licenses
 
-        # Install required tools only
+        # Install required components
         "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --sdk_root="$ANDROID_SDK_ROOT" \
           "platform-tools" \
           "platforms;android-33" \
           "build-tools;33.0.2"
 
-        # Confirm aidl is present
-        if [ ! -f "$ANDROID_SDK_ROOT/build-tools/33.0.2/aidl" ]; then
-          echo "ERROR: aidl not found!"
+        # Validate installation
+        echo "Installed build-tools:"
+        ls -la "$ANDROID_SDK_ROOT/build-tools/33.0.2"
+
+        # Check if aidl exists
+        if [ ! -x "$ANDROID_SDK_ROOT/build-tools/33.0.2/aidl" ]; then
+          echo "❌ ERROR: aidl not found!"
           exit 1
+        else
+          echo "✅ aidl found at $ANDROID_SDK_ROOT/build-tools/33.0.2/aidl"
         fi
+
+        # Add build-tools to PATH for Buildozer
+        export PATH="$ANDROID_SDK_ROOT/build-tools/33.0.2:$PATH"
 
     - name: Configure Buildozer build tools and API
       run: |
