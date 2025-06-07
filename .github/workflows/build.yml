@@ -43,17 +43,33 @@ jobs:
         pip install cython
         pip install buildozer
 
-    - name: Accept Android SDK licenses and install SDK components
+    - name: Setup Android SDK and accept licenses
       run: |
-        ANDROID_SDK_ROOT=$HOME/.buildozer/android/platform/android-sdk
+        export ANDROID_SDK_ROOT=$HOME/.buildozer/android/platform/android-sdk
+
+        # Clean old build-tools to avoid conflicts
+        rm -rf $ANDROID_SDK_ROOT/build-tools/*
+
+        # Install cmdline-tools if missing
+        mkdir -p $ANDROID_SDK_ROOT/cmdline-tools
+        if [ ! -d "$ANDROID_SDK_ROOT/cmdline-tools/latest" ]; then
+          wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O cmdline-tools.zip
+          unzip cmdline-tools.zip -d $ANDROID_SDK_ROOT/cmdline-tools/
+          mv $ANDROID_SDK_ROOT/cmdline-tools/cmdline-tools $ANDROID_SDK_ROOT/cmdline-tools/latest
+          rm cmdline-tools.zip
+        fi
+
+        # Accept licenses
         yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --licenses
+
+        # Install only the pinned SDK components
         $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager "platforms;android-33" "build-tools;33.0.2" "platform-tools"
 
     - name: Configure Buildozer build tools and API
       run: |
         if [ -f buildozer.spec ]; then
-          sed -i 's/# android.build_tools = .*/android.build_tools = 33.0.2/' buildozer.spec
-          sed -i 's/# android.api = .*/android.api = 33/' buildozer.spec
+          sed -i 's/^# *android.build_tools = .*/android.build_tools = 33.0.2/' buildozer.spec
+          sed -i 's/^# *android.api = .*/android.api = 33/' buildozer.spec
         fi
 
     - name: Initialize buildozer if missing
@@ -63,14 +79,6 @@ jobs:
         fi
 
     - name: Build APK
-      run: |
-        buildozer android debug
-
-    - name: Upload APK artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: app-debug.apk
-        path: bin/*.apk
       run: |
         buildozer android debug
 
