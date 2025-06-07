@@ -1,0 +1,4 @@
+- name: Show project folder structure
+  run: |
+    sudo apt install tree -y
+    tree -L 3
