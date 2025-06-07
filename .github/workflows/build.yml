@@ -44,26 +44,32 @@ jobs:
         pip install buildozer
 
     - name: Setup Android SDK and accept licenses
+      env:
+        ANDROID_SDK_ROOT: $HOME/.buildozer/android/platform/android-sdk
       run: |
-        export ANDROID_SDK_ROOT=$HOME/.buildozer/android/platform/android-sdk
+        mkdir -p "$ANDROID_SDK_ROOT"
 
-        # Clean old build-tools to avoid conflicts
-        rm -rf $ANDROID_SDK_ROOT/build-tools/*
-
-        # Install cmdline-tools if missing
-        mkdir -p $ANDROID_SDK_ROOT/cmdline-tools
-        if [ ! -d "$ANDROID_SDK_ROOT/cmdline-tools/latest" ]; then
-          wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O cmdline-tools.zip
-          unzip cmdline-tools.zip -d $ANDROID_SDK_ROOT/cmdline-tools/
-          mv $ANDROID_SDK_ROOT/cmdline-tools/cmdline-tools $ANDROID_SDK_ROOT/cmdline-tools/latest
-          rm cmdline-tools.zip
-        fi
+        # Install cmdline-tools
+        mkdir -p "$ANDROID_SDK_ROOT/cmdline-tools"
+        wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O cmdline-tools.zip
+        unzip -q cmdline-tools.zip
+        rm cmdline-tools.zip
+        mv cmdline-tools "$ANDROID_SDK_ROOT/cmdline-tools/latest"
 
         # Accept licenses
-        yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --licenses
+        yes | "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --sdk_root="$ANDROID_SDK_ROOT" --licenses
 
-        # Install only the pinned SDK components
-        $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager "platforms;android-33" "build-tools;33.0.2" "platform-tools"
+        # Install required tools only
+        "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --sdk_root="$ANDROID_SDK_ROOT" \
+          "platform-tools" \
+          "platforms;android-33" \
+          "build-tools;33.0.2"
+
+        # Confirm aidl is present
+        if [ ! -f "$ANDROID_SDK_ROOT/build-tools/33.0.2/aidl" ]; then
+          echo "ERROR: aidl not found!"
+          exit 1
+        fi
 
     - name: Configure Buildozer build tools and API
       run: |
