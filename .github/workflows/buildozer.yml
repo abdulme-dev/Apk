@@ -1,39 +1,36 @@
-# .github/workflows/buildozer.yml
 name: Build APK
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04  # ✅ Use stable LTS runner
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v3
 
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: 3.10
+        python-version: '3.10'
 
     - name: Install dependencies
       run: |
-        sudo dpkg --add-architecture i386
-        sudo apt-get update
-        sudo apt-get install -y \
-          zip unzip git wget curl \
-          openjdk-17-jdk \
-          libncurses6 \
-          libstdc++6 \
-          python3-pip
+        sudo apt update
+        sudo apt install -y build-essential libncurses5 libffi-dev libssl-dev libsqlite3-dev zlib1g-dev openjdk-17-jdk unzip git wget
 
-    - name: Install buildozer
+    - name: Install Buildozer
       run: |
-        pip install --upgrade pip
-        pip install cython virtualenv
+        python -m pip install --upgrade pip
         pip install buildozer
+
+    - name: Initialize buildozer
+      run: |
+        buildozer init || true  # skip if already exists
 
     - name: Build APK
       run: |
@@ -42,5 +39,5 @@ jobs:
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
-        name: app-debug
+        name: app-debug.apk
         path: bin/*.apk
