@@ -42,6 +42,16 @@ jobs:
         python -m pip install --upgrade pip
         pip install cython
         pip install buildozer
+- name: Accept Android SDK Licenses
+      run: |
+        mkdir -p ~/.android
+        echo "8933bad161af4178b1185d1a37fbf41ea5269c55" > ~/.android/repositories.cfg
+
+    - name: Configure Build Tools version
+      run: |
+        sed -i 's/# android.build_tools = .*/android.build_tools = 33.0.2/' buildozer.spec
+        sed -i 's/# android.api = .*/android.api = 33/' buildozer.spec
+
 
     - name: Build APK
       run: |
